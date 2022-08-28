@@ -1,4 +1,4 @@
-import { createSignal, Show, mergeProps, createEffect } from "solid-js";
+import { createSignal, Show, mergeProps, createMemo } from "solid-js";
 import { createStore } from "solid-js/store";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
@@ -265,7 +265,7 @@ const DataGrid = (props) => {
   //console.log(dataLink);
   // dataLink[dprops.tag] == undefined ? {} : dataLink[dprops.tag].dataNode
 
-  //const headers = Object.keys( dataLink[dprops.tag].dataNode[0]);
+  const headers = createMemo(() => Object.keys(dataLink[dprops.tag] && dataLink[dprops.tag].dataNode.length > 0   ? dataLink[dprops.tag].dataNode[0] : {}));
   
   return (
     <Show
@@ -276,7 +276,7 @@ const DataGrid = (props) => {
         <Table striped="odd" dense>
           <Thead>
             <Tr>
-              {Object.keys(dataLink[dprops.tag].dataNode[0]).map((header) => (
+              {headers()?.map((header) => (
                 <Th>{header}</Th>
               ))}
             </Tr>
@@ -285,7 +285,7 @@ const DataGrid = (props) => {
             <For each={dataLink[dprops.tag].dataNode}>
               {(d) => (
                 <Tr>
-                  {Object.keys(dataLink[dprops.tag].dataNode[0]).map((header) => (
+                  {headers()?.map((header) => (
                     <Td> {d[header]}</Td>
                   ))}
                 </Tr>
