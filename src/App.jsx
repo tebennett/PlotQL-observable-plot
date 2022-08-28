@@ -3,6 +3,7 @@ import { createStore } from "solid-js/store";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
 import { createGraphQLClient, gql, request } from "@solid-primitives/graphql";
+/*
 import {
   Card,
   Form,
@@ -19,6 +20,26 @@ import {
   NavDropdown,
 } from "solid-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+*/
+import {
+  HopeProvider,
+  Box,
+  SimpleGrid,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  Textarea,
+  Heading,
+  InputGroup,
+  InputLeftAddon,
+} from "@hope-ui/solid";
 import * as Aq from "arquero";
 import YAML from "yaml";
 import Jsonata from "jsonata";
@@ -121,18 +142,18 @@ const PlotController = (props) => {
 
   //setDataLink( l =>  [ ...l , { name: `${newProps.tag}` , dataNode: gdata()["Disease"] }   ]  );
   //const dataLink$ = from(observable(gdata));
-
+  let fc;
   const fcf = (e) => {
     e.preventDefault();
-    let ftx = document.getElementById(`fc${newProps.tag}`);
-    setFillcolor(ftx.value);
+    // let ftx = document.getElementById(`fc${newProps.tag}`);
+    setFillcolor(fc.value);
   };
 
   let qt;
   const fn = (event) => {
     event.preventDefault();
-    let vtx = document.getElementById(`tx${newProps.tag}`);
-    setDataLink(`${newProps.tag}`, { where: YAML.parse(vtx.value) });
+    //let vtx = document.getElementById(`tx${newProps.tag}`);
+    setDataLink(`${newProps.tag}`, { where: YAML.parse(qt.value) });
     //setAction(YAML.parse(vtx.value));
   };
 
@@ -149,92 +170,40 @@ setDataLink(
   //console.log(dataLink[newProps.tag]);
 
   return (
-    <Card>
-      <Card.Header>
-        <Navbar bg="light" expand="lg">
-          <Container>
-            <Navbar.Brand href="#home">PlotQL: {newProps.tag}</Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse id="basic-navbar-nav">
-              <Nav class="me-auto">
-                <ButtonGroup>
-                  <Button variant="secondary">1</Button>
-                  <Button variant="secondary">2</Button>
+    <Box>
+      <div>
+        <form onsubmit={fn}>
+          <FormLabel>Enter Hasura Query</FormLabel>
 
-                  <DropdownButton
-                    variant="secondary"
-                    as={ButtonGroup}
-                    title="Dropdown"
-                    id="bg-nested-dropdown"
-                  >
-                    <Dropdown.Item eventKey="1">Dropdown link</Dropdown.Item>
-                    <Dropdown.Item eventKey="2">Dropdown link</Dropdown.Item>
-                  </DropdownButton>
-                </ButtonGroup>
-                <NavDropdown title="Dropdown" id="basic-nav-dropdown">
-                  <NavDropdown.Item href="#action/3.1">
-                    DataGrid
-                  </NavDropdown.Item>
-                  <NavDropdown.Item href="#action/3.2">
-                    Another action
-                  </NavDropdown.Item>
-                  <NavDropdown.Item href="#action/3.3">
-                    Something
-                  </NavDropdown.Item>
-                  <NavDropdown.Divider />
-                  <NavDropdown.Item href="#action/3.4">
-                    Separated link
-                  </NavDropdown.Item>
-                </NavDropdown>
-              </Nav>
-            </Navbar.Collapse>
-          </Container>
-        </Navbar>
-      </Card.Header>
-      <Card.Body>
-        <div>
-          <Form onSubmit={fn}>
-            <Form.Group class="sm-3" controlId="plotform.ControlInput1">
-              <Form.Label>Enter Hasura Query</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                id={`tx${newProps.tag}`}
-              ></Form.Control>
+          <Textarea onSubmit={fn} ref={qt}></Textarea>
+          <Button colorScheme="secondary" type="submit">
+            query
+          </Button>
+        </form>
 
-              <Button variant="secondary" type="submit">
-                query
-              </Button>
-            </Form.Group>
-          </Form>
+        <form onsubmit={fcf}>
+          <InputGroup>
+            <InputLeftAddon>Color</InputLeftAddon>
+            <Input type="text" placeholder="new color" ref={fc} />
+          </InputGroup>
 
-          <Form onSubmit={fcf}>
-            <Form.Group class="sm-3" controlId="PlotForm.ColorControl1">
-              <br />
-              <Form.Control size="sm" type="text" id={`fc${newProps.tag}`} />
+          <Button colorScheme="primary" type="submit">
+            New Color
+          </Button>
+        </form>
 
-              <Button variant="primary" type="submit">
-                New Color
-              </Button>
-            </Form.Group>
-            <br />
-          </Form>
+        <Show when={gdata()} fallback={<div>Loading...</div>}>
+          {setDataLink(`${newProps.tag}`, { dataNode: gdata()["Disease"] })}
 
-          <Show when={gdata()} fallback={<div>Loading...</div>}>
-            {setDataLink(`${newProps.tag}`, { dataNode: gdata()["Disease"] })}
-            <div>
-              <p>{console.log("dataLink[newProps.tag]")}</p>
-            </div>
-            <Dynamic
-              component={newProps.chart}
-              info={gdata()["Disease"]}
-              tag={newProps.tag}
-              color={fillcolor()}
-            />
-          </Show>
-        </div>
-      </Card.Body>
-    </Card>
+          <Dynamic
+            component={newProps.chart}
+            info={gdata()["Disease"]}
+            tag={newProps.tag}
+            color={fillcolor()}
+          />
+        </Show>
+      </div>
+    </Box>
   );
 
   //<div id={newProps.tag}></div>
@@ -255,58 +224,37 @@ setDataLink(
 const DesignGrid = (props) => {
   const designProps = mergeProps(props);
 
+  let dgt;
   const dgn = (event) => {
     event.preventDefault();
-    let dgx = document.getElementById(`dgx${designProps.tag}`);
-    setDataLink(`${designProps.tag}`, { where: YAML.parse(dgx.value) });
+    //let dgx = document.getElementById(`dgx${designProps.tag}`);
+    setDataLink(`${designProps.tag}`, { where: YAML.parse(dgt.value) });
     //setAction(YAML.parse(vtx.value));
   };
 
   return (
-    <Card>
-      <Card.Header>
-        <Nav variant="tabs" defaultActiveKey="#first">
-          <Nav.Item>
-            <Nav.Link href="#first">Active</Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link href="#link">Link</Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link href="#disabled" disabled>
-              Disabled
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
-      </Card.Header>
-      <Card.Body>
-        <Card.Title>Design Grid {designProps.tag}</Card.Title>
-        <div>
-          <Form onSubmit={dgn}>
-            <Form.Group class="sm-3" controlId="plotdesignform.ControlInput1">
-              <Form.Label>Enter Hasura Query</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                id={`dgx${designProps.tag}`}
-              ></Form.Control>
+    <Box>
+      <Heading>Design Grid {designProps.tag}</Heading>
+      <div>
+        <form onsubmit={dgn}>
+          <FormLabel>Enter Hasura Query</FormLabel>
 
-              <Button variant="secondary" type="submit">
-                query
-              </Button>
-            </Form.Group>
-          </Form>
-        </div>
-        <Button variant="primary">Filter</Button>
-      </Card.Body>
-    </Card>
+          <Textarea ref={dgt}></Textarea>
+          <Button colorScheme="secondary" type="submit">
+            query
+          </Button>
+        </form>
+      </div>
+    </Box>
   );
 };
 
 const DataGrid = (props) => {
+  //const [headers,setHeaders] = createSignal();
   //let rslt = from(dataLink$);
   //console.log(rslt);
   const dprops = mergeProps(props);
+  // setDataNode(dataLink[dprops.tag].dataNode);
   //const pred = R.whereAny({name: R.equals(`${dprops.tag}`), dataNode: R.equals(R.__)});
   //if (R.find(pred,dataLink) != undefined)
   //const dl = R.filter(pred, dataLink)[0].dataNode;
@@ -314,20 +262,39 @@ const DataGrid = (props) => {
   //const tbl = Aq.from(dprops.info);
   // if (dataLink != undefined)
   //console.log(dataLink[dprops.tag]);
-  console.log(dataLink);
+  //console.log(dataLink);
+  // dataLink[dprops.tag] == undefined ? {} : dataLink[dprops.tag].dataNode
 
+  //const headers = Object.keys( dataLink[dprops.tag].dataNode[0]);
+  
   return (
-    <div style={"max-height: 300px;overflow-y: scroll;"}>
-      <Table
-        striped
-        bordered
-        hover
-        size="sm"
-        innerHTML={Aq.from(
-          dataLink[dprops.tag] == undefined ? {} : dataLink[dprops.tag].dataNode
-        ).toHTML()}
-      ></Table>
-    </div>
+    <Show
+      when={dataLink[dprops.tag] && dataLink[dprops.tag].dataNode.length > 0}
+      fallback={<div>loading...</div>}
+    >
+      <div style={"max-height: 300px;overflow-y: scroll;"}>
+        <Table striped="odd" dense>
+          <Thead>
+            <Tr>
+              {Object.keys(dataLink[dprops.tag].dataNode[0]).map((header) => (
+                <Th>{header}</Th>
+              ))}
+            </Tr>
+          </Thead>
+          <Tbody>
+            <For each={dataLink[dprops.tag].dataNode}>
+              {(d) => (
+                <Tr>
+                  {Object.keys(dataLink[dprops.tag].dataNode[0]).map((header) => (
+                    <Td> {d[header]}</Td>
+                  ))}
+                </Tr>
+              )}
+            </For>
+          </Tbody>
+        </Table>
+      </div>
+    </Show>
   );
 };
 
@@ -335,68 +302,60 @@ function App() {
   //let pDiv;
 
   return (
-    <Container>
-      <Row>
-        <Col>
-          <Row>
-            <Row>
-              <DesignGrid tag={"ivs"} />
-            </Row>
-            <Row>
-              <DataGrid tag={"ivs"} />
-            </Row>
-          </Row>
-          <Row>
-            <Row>
-              <DesignGrid tag={"vis"} />
-            </Row>
-            <Row>
-              <DataGrid tag={"vis"} />
-            </Row>
-          </Row>
-        </Col>
-        <Col>
-          <Row>
-            <PlotController
-              chart={PlotLine}
-              tag={"ivs"}
-              action={{ newCases: { _gte: 300000 } }}
-              sortDirection={{ date: "asc" }}
-              query={gql`
-                query (
-                  $sortDirection: [Disease_order_by!]
-                  $action: Disease_bool_exp
-                ) {
-                  Disease(order_by: $sortDirection, where: $action) {
-                    date
-                    newCases
-                  }
+    <HopeProvider>
+      <SimpleGrid columns={3} gap="$10">
+        <Box>
+          <DesignGrid tag={"ivs"} />
+        </Box>
+        <Box>
+          <DataGrid tag={"ivs"} />
+        </Box>
+        <Box>
+          <PlotController
+            chart={PlotLine}
+            tag={"ivs"}
+            action={{ newCases: { _gte: 300000 } }}
+            sortDirection={{ date: "asc" }}
+            query={gql`
+              query (
+                $sortDirection: [Disease_order_by!]
+                $action: Disease_bool_exp
+              ) {
+                Disease(order_by: $sortDirection, where: $action) {
+                  date
+                  newCases
                 }
-              `}
-            />
-          </Row>
-          <Row>
-            <PlotController
-              chart={PlotBar}
-              tag={"vis"}
-              action={{ newCases: { _gte: 0 } }}
-              sortDirection={{ date: "asc" }}
-              query={gql`
-                query (
-                  $sortDirection: [Disease_order_by!]
-                  $action: Disease_bool_exp
-                ) {
-                  Disease(order_by: $sortDirection, where: $action) {
-                    date
-                    newCases
-                  }
+              }
+            `}
+          />
+        </Box>
+        <Box>
+          <DesignGrid tag={"vis"} />
+        </Box>
+        <Box>
+          <DataGrid tag={"vis"} />
+        </Box>
+        <Box>
+          <PlotController
+            chart={PlotBar}
+            tag={"vis"}
+            action={{ newCases: { _gte: 0 } }}
+            sortDirection={{ date: "asc" }}
+            query={gql`
+              query (
+                $sortDirection: [Disease_order_by!]
+                $action: Disease_bool_exp
+              ) {
+                Disease(order_by: $sortDirection, where: $action) {
+                  date
+                  newCases
                 }
-              `}
-            />
-          </Row>
-        </Col>
-      </Row>
-    </Container>
+              }
+            `}
+          />
+        </Box>
+      </SimpleGrid>
+    </HopeProvider>
   );
 }
 
