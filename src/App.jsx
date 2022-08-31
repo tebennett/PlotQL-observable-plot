@@ -213,6 +213,7 @@ setDataLink(
 
           <Dynamic
             component={newProps.view}
+            layout={newProps.layout}
             info={gdata()["Disease"]}
             tag={dataID}
             color={fillcolor()}
@@ -337,10 +338,37 @@ const DiseaseView = (props) => {
       </Box>
       <Box w={"100%"}>
         <PlotGrid
-        chart={PlotBar}
+        chart={PlotLine}
         info={diseaseProps.info}
         tag={diseaseProps.tag}
         color={diseaseProps.color}/>
+      </Box>
+    </SimpleGrid>
+  );
+};
+
+const TemplateView = (props) => {
+const templateProps = mergeProps(props);
+
+
+  return (
+    <SimpleGrid columns={2} gap="$2">
+      <Box>
+        <VStack>
+          <Box>
+            <DesignGrid tag={templateProps.tag} />
+          </Box>
+          <Box>
+            <DataGrid tag={templateProps.tag} />
+          </Box>
+        </VStack>
+      </Box>
+      <Box w={"100%"}>
+        <PlotGrid
+        chart={templateProps.layout.right}
+        info={templateProps.info}
+        tag={templateProps.tag}
+        color={templateProps.color}/>
       </Box>
     </SimpleGrid>
   );
@@ -354,7 +382,8 @@ function App() {
       <VStack spacing={"$1"}>
         <Box>
           <PlotController
-            view={DiseaseView }
+            view={TemplateView }
+            layout={ {right: PlotBar} }
             action={{ newCases: { _gte: 300000 } }}
             sortDirection={{ date: "asc" }}
             query={gql`
