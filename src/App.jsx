@@ -1,4 +1,4 @@
-import { createSignal, Show, mergeProps, createMemo } from "solid-js";
+import { createSignal, Show, mergeProps, createMemo, createUniqueId } from "solid-js";
 import { createStore } from "solid-js/store";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
@@ -39,6 +39,7 @@ import {
   Heading,
   InputGroup,
   InputLeftAddon,
+  VStack,
 } from "@hope-ui/solid";
 import * as Aq from "arquero";
 import YAML from "yaml";
@@ -105,6 +106,19 @@ const items = {
   line: PlotLine,
 };
 
+const PlotGrid = (props) => {
+  const plotProps = mergeProps(props);
+
+  return (
+    <Dynamic
+      component={plotProps.chart}
+      info={plotProps.info}
+      tag={plotProps.tag}
+      color={plotProps.color}
+    />
+  );
+};
+
 const PlotController = (props) => {
   const client = createGraphQLClient("http://localhost:8080/v1/graphql");
 
@@ -115,32 +129,34 @@ const PlotController = (props) => {
   const newProps = mergeProps(props);
   setAction(newProps.action);
   setSortDirection(newProps.setSortDirection);
+  const dataID = createUniqueId();
 
+  //  `${newProps.tag}`
   setDataLink(
     R.fromPairs([
       [
-        `${newProps.tag}`,
+        dataID,
         {
-          keyID: `ID-${newProps.tag}`,
+          keyID: `ID-${dataID}`,
           query: newProps.query,
           sort: newProps.sortDirection,
           where: newProps.action,
           filter: "(Disease.newCases)[[0..20]]",
-          dataNode: {},
+          cache: {},
         },
       ],
     ])
   );
 
-  const [gdata] = client(dataLink[newProps.tag].query, () => ({
+  const [gdata] = client(dataLink[dataID].query, () => ({
     sortDirection: sortDirection(),
-    action: dataLink[newProps.tag].where,
+    action: dataLink[dataID].where,
     //action: action(),
   }));
 
   //let fc;
 
-  //setDataLink( l =>  [ ...l , { name: `${newProps.tag}` , dataNode: gdata()["Disease"] }   ]  );
+  //setDataLink( l =>  [ ...l , { name: `${newProps.tag}` , cache: gdata()["Disease"] }   ]  );
   //const dataLink$ = from(observable(gdata));
   let fc;
   const fcf = (e) => {
@@ -153,14 +169,14 @@ const PlotController = (props) => {
   const fn = (event) => {
     event.preventDefault();
     //let vtx = document.getElementById(`tx${newProps.tag}`);
-    setDataLink(`${newProps.tag}`, { where: YAML.parse(qt.value) });
+    setDataLink(dataID, { where: YAML.parse(qt.value) });
     //setAction(YAML.parse(vtx.value));
   };
 
   //    id={`fc${newProps.tag}`}
 
   /*
-  setDataLink( R.fromPairs([[`${newProps.tag}`, {dataNode: gdata()["Disease"]  }   ]])  );
+  setDataLink( R.fromPairs([[`${newProps.tag}`, {cache: gdata()["Disease"]  }   ]])  );
   setDataLink( R.fromPairs([[`${newProps.tag}`, { query: newProps.query }   ]])  );
   console.log(dataLink[newProps.tag]);
 setDataLink(
@@ -193,12 +209,12 @@ setDataLink(
         </form>
 
         <Show when={gdata()} fallback={<div>Loading...</div>}>
-          {setDataLink(`${newProps.tag}`, { dataNode: gdata()["Disease"] })}
+          {setDataLink(dataID, { cache: gdata()["Disease"] })}
 
           <Dynamic
-            component={newProps.chart}
+            component={newProps.view}
             info={gdata()["Disease"]}
-            tag={newProps.tag}
+            tag={dataID}
             color={fillcolor()}
           />
         </Show>
@@ -254,22 +270,28 @@ const DataGrid = (props) => {
   //let rslt = from(dataLink$);
   //console.log(rslt);
   const dprops = mergeProps(props);
-  // setDataNode(dataLink[dprops.tag].dataNode);
-  //const pred = R.whereAny({name: R.equals(`${dprops.tag}`), dataNode: R.equals(R.__)});
+  // setDataNode(dataLink[dprops.tag].cache);
+  //const pred = R.whereAny({name: R.equals(`${dprops.tag}`), cache: R.equals(R.__)});
   //if (R.find(pred,dataLink) != undefined)
-  //const dl = R.filter(pred, dataLink)[0].dataNode;
-  //console.log( R.filter(pred, dataLink)[0].dataNode );
+  //const dl = R.filter(pred, dataLink)[0].cache;
+  //console.log( R.filter(pred, dataLink)[0].cache );
   //const tbl = Aq.from(dprops.info);
   // if (dataLink != undefined)
   //console.log(dataLink[dprops.tag]);
   //console.log(dataLink);
-  // dataLink[dprops.tag] == undefined ? {} : dataLink[dprops.tag].dataNode
+  // dataLink[dprops.tag] == undefined ? {} : dataLink[dprops.tag].cache
 
-  const headers = createMemo(() => Object.keys(dataLink[dprops.tag] && dataLink[dprops.tag].dataNode.length > 0   ? dataLink[dprops.tag].dataNode[0] : {}));
-  
+  const headers = createMemo(() =>
+    Object.keys(
+      dataLink[dprops.tag] && dataLink[dprops.tag].cache.length > 0
+        ? dataLink[dprops.tag].cache[0]
+        : {}
+    )
+  );
+
   return (
     <Show
-      when={dataLink[dprops.tag] && dataLink[dprops.tag].dataNode.length > 0}
+      when={dataLink[dprops.tag] && dataLink[dprops.tag].cache.length > 0}
       fallback={<div>loading...</div>}
     >
       <div style={"max-height: 300px;overflow-y: scroll;"}>
@@ -282,7 +304,7 @@ const DataGrid = (props) => {
             </Tr>
           </Thead>
           <Tbody>
-            <For each={dataLink[dprops.tag].dataNode}>
+            <For each={dataLink[dprops.tag].cache}>
               {(d) => (
                 <Tr>
                   {headers()?.map((header) => (
@@ -298,22 +320,41 @@ const DataGrid = (props) => {
   );
 };
 
+const DiseaseView = (props) => {
+  const diseaseProps = mergeProps(props);
+
+  return (
+    <SimpleGrid columns={2} gap="$2">
+      <Box>
+        <VStack>
+          <Box>
+            <DesignGrid tag={diseaseProps.tag} />
+          </Box>
+          <Box>
+            <DataGrid tag={diseaseProps.tag} />
+          </Box>
+        </VStack>
+      </Box>
+      <Box w={"100%"}>
+        <PlotGrid
+        chart={PlotBar}
+        info={diseaseProps.info}
+        tag={diseaseProps.tag}
+        color={diseaseProps.color}/>
+      </Box>
+    </SimpleGrid>
+  );
+};
+
 function App() {
   //let pDiv;
 
   return (
     <HopeProvider>
-      <SimpleGrid columns={3} gap="$10">
-        <Box>
-          <DesignGrid tag={"ivs"} />
-        </Box>
-        <Box>
-          <DataGrid tag={"ivs"} />
-        </Box>
+      <VStack spacing={"$1"}>
         <Box>
           <PlotController
-            chart={PlotLine}
-            tag={"ivs"}
+            view={DiseaseView }
             action={{ newCases: { _gte: 300000 } }}
             sortDirection={{ date: "asc" }}
             query={gql`
@@ -329,16 +370,10 @@ function App() {
             `}
           />
         </Box>
-        <Box>
-          <DesignGrid tag={"vis"} />
-        </Box>
-        <Box>
-          <DataGrid tag={"vis"} />
-        </Box>
+
         <Box>
           <PlotController
-            chart={PlotBar}
-            tag={"vis"}
+            view={DiseaseView}
             action={{ newCases: { _gte: 0 } }}
             sortDirection={{ date: "asc" }}
             query={gql`
@@ -354,7 +389,7 @@ function App() {
             `}
           />
         </Box>
-      </SimpleGrid>
+      </VStack>
     </HopeProvider>
   );
 }
