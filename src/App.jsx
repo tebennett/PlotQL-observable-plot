@@ -1,4 +1,10 @@
-import { createSignal, Show, mergeProps, createMemo, createUniqueId } from "solid-js";
+import {
+  createSignal,
+  Show,
+  mergeProps,
+  createMemo,
+  createUniqueId,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
@@ -44,11 +50,8 @@ import {
 import * as Aq from "arquero";
 import YAML from "yaml";
 import Jsonata from "jsonata";
+import { JSONPath } from "jsonpath-plus";
 import * as R from "ramda";
-
-let jdata = {
-  example: [{ value: 4 }, { value: 7 }, { value: 13 }],
-};
 
 let expression = Jsonata("(Disease.newCases)[[0..20]]");
 //let reslt = expression.evaluate(jdata);
@@ -154,6 +157,8 @@ const PlotController = (props) => {
     //action: action(),
   }));
 
+ 
+
   //let fc;
 
   //setDataLink( l =>  [ ...l , { name: `${newProps.tag}` , cache: gdata()["Disease"] }   ]  );
@@ -209,12 +214,14 @@ setDataLink(
         </form>
 
         <Show when={gdata()} fallback={<div>Loading...</div>}>
-          {setDataLink(dataID, { cache: gdata()["Disease"] })}
+          {setDataLink(dataID, {
+            cache: JSONPath({ path: newProps.shape, json: gdata() }),
+          })}
 
           <Dynamic
             component={newProps.view}
             layout={newProps.layout}
-            info={gdata()["Disease"]}
+            info={dataLink[dataID].cache}
             tag={dataID}
             color={fillcolor()}
           />
@@ -222,11 +229,14 @@ setDataLink(
       </div>
     </Box>
   );
-
+  //  {setDataLink(dataID, { cache: gdata()["Disease"] })}
   //<div id={newProps.tag}></div>
 };
 
 /*
+
+{setDataLink(dataID, {cache: JSONPath({path: newProps.shape, json: gdata() } ) } )}
+
 <Form.Select
                 value={selected()}
                 onInput={(e) => setSelected(e.currentTarget.value)}
@@ -338,18 +348,18 @@ const DiseaseView = (props) => {
       </Box>
       <Box w={"100%"}>
         <PlotGrid
-        chart={PlotLine}
-        info={diseaseProps.info}
-        tag={diseaseProps.tag}
-        color={diseaseProps.color}/>
+          chart={PlotLine}
+          info={diseaseProps.info}
+          tag={diseaseProps.tag}
+          color={diseaseProps.color}
+        />
       </Box>
     </SimpleGrid>
   );
 };
 
 const TemplateView = (props) => {
-const templateProps = mergeProps(props);
-
+  const templateProps = mergeProps(props);
 
   return (
     <SimpleGrid columns={2} gap="$2">
@@ -365,10 +375,11 @@ const templateProps = mergeProps(props);
       </Box>
       <Box w={"100%"}>
         <PlotGrid
-        chart={templateProps.layout.right}
-        info={templateProps.info}
-        tag={templateProps.tag}
-        color={templateProps.color}/>
+          chart={templateProps.layout.right}
+          info={templateProps.info}
+          tag={templateProps.tag}
+          color={templateProps.color}
+        />
       </Box>
     </SimpleGrid>
   );
@@ -382,8 +393,9 @@ function App() {
       <VStack spacing={"$1"}>
         <Box>
           <PlotController
-            view={TemplateView }
-            layout={ {right: PlotBar} }
+            view={TemplateView}
+            shape={"$.Disease.*"}
+            layout={{ right: PlotBar }}
             action={{ newCases: { _gte: 300000 } }}
             sortDirection={{ date: "asc" }}
             query={gql`
@@ -403,6 +415,7 @@ function App() {
         <Box>
           <PlotController
             view={DiseaseView}
+            shape={"$.Disease.*"}
             action={{ newCases: { _gte: 0 } }}
             sortDirection={{ date: "asc" }}
             query={gql`
