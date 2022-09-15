@@ -12,5 +12,6 @@
 - rename poorly named variables
 - in-code documentation and comments
 - prop for user supplied link to remote hasura/prisma instance
-
+- css styling
+- export functions from a separate file
 
