@@ -14,4 +14,5 @@
 - prop for user supplied link to remote hasura/prisma instance
 - css styling
 - export functions from a separate file
+- process nested data in graphql response 
 
