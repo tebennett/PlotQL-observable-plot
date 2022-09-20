@@ -53,7 +53,7 @@ import Jsonata from "jsonata";
 import { JSONPath } from "jsonpath-plus";
 import * as R from "ramda";
 
-let expression = Jsonata("(Disease.newCases)[[0..20]]");
+let expression = Jsonata("(Sales.SALES)[[0..20]]");
 //let reslt = expression.evaluate(jdata);
 
 //console.log(reslt);
@@ -74,8 +74,8 @@ const PlotLine = (props) => {
         },
         marks: [
           Plot.line(lprops.info, {
-            x: (d) => formatDate(d.date),
-            y: "newCases",
+            x: (d) => formatDate(d.ORDERDATE),
+            y: "SALES",
             stroke: lprops.color,
           }),
         ],
@@ -94,8 +94,8 @@ const PlotBar = (props) => {
         marks: [
           Plot.ruleY([0]),
           Plot.barY(bprops.info, {
-            x: (d) => formatDate(d.date),
-            y: "newCases",
+            x: (d) => formatDate(d.ORDERDATE),
+            y: "SALES",
             fill: bprops.color,
           }),
         ],
@@ -131,7 +131,7 @@ const PlotController = (props) => {
   const [fillcolor, setFillcolor] = createSignal("steelblue");
   const newProps = mergeProps(props);
   setAction(newProps.action);
-  setSortDirection(newProps.setSortDirection);
+  setSortDirection(newProps.sortDirection);
   const dataID = createUniqueId();
 
   //  `${newProps.tag}`
@@ -144,7 +144,7 @@ const PlotController = (props) => {
           query: newProps.query,
           sort: newProps.sortDirection,
           where: newProps.action,
-          filter: "(Disease.newCases)[[0..20]]",
+          filter: "(Sales.SALES)[[0..20]]",
           cache: {},
         },
       ],
@@ -331,27 +331,27 @@ const DataGrid = (props) => {
   );
 };
 
-const DiseaseView = (props) => {
-  const diseaseProps = mergeProps(props);
+const SalesView = (props) => {
+  const salesProps = mergeProps(props);
 
   return (
     <SimpleGrid columns={2} gap="$2">
       <Box>
         <VStack>
           <Box>
-            <DesignGrid tag={diseaseProps.tag} />
+            <DesignGrid tag={salesProps.tag} />
           </Box>
           <Box>
-            <DataGrid tag={diseaseProps.tag} />
+            <DataGrid tag={salesProps.tag} />
           </Box>
         </VStack>
       </Box>
       <Box w={"100%"}>
         <PlotGrid
           chart={PlotLine}
-          info={diseaseProps.info}
-          tag={diseaseProps.tag}
-          color={diseaseProps.color}
+          info={salesProps.info}
+          tag={salesProps.tag}
+          color={salesProps.color}
         />
       </Box>
     </SimpleGrid>
@@ -394,18 +394,18 @@ function App() {
         <Box>
           <PlotController
             view={TemplateView}
-            shape={"$.Disease.*"}
+            shape={"$.Sales.*"}
             layout={{ right: PlotBar }}
-            action={{ newCases: { _gte: 300000 } }}
-            sortDirection={{ date: "asc" }}
+            action={{ SALES: { _lte: 1500 } }}
+            sortDirection={{ ORDERDATE: "asc" }}
             query={gql`
               query (
-                $sortDirection: [Disease_order_by!]
-                $action: Disease_bool_exp
+                $sortDirection: [Sales_order_by!]
+                $action: Sales_bool_exp
               ) {
-                Disease(order_by: $sortDirection, where: $action) {
-                  date
-                  newCases
+                Sales(order_by: $sortDirection, where: $action) {
+                  ORDERDATE
+                  SALES
                 }
               }
             `}
@@ -414,18 +414,18 @@ function App() {
 
         <Box>
           <PlotController
-            view={DiseaseView}
-            shape={"$.Disease.*"}
-            action={{ newCases: { _gte: 0 } }}
-            sortDirection={{ date: "asc" }}
+            view={SalesView}
+            shape={"$.Sales.*"}
+            action={{ SALES: { _lte: 700 } }}
+            sortDirection={{ ORDERDATE: "asc" }}
             query={gql`
               query (
-                $sortDirection: [Disease_order_by!]
-                $action: Disease_bool_exp
+                $sortDirection: [Sales_order_by!]
+                $action: Sales_bool_exp
               ) {
-                Disease(order_by: $sortDirection, where: $action) {
-                  date
-                  newCases
+                Sales(order_by: $sortDirection, where: $action) {
+                  ORDERDATE
+                  SALES
                 }
               }
             `}
