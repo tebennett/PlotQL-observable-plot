@@ -123,13 +123,14 @@ const PlotGrid = (props) => {
 };
 
 const PlotController = (props) => {
-  const client = createGraphQLClient("http://localhost:8080/v1/graphql");
+ // const client = createGraphQLClient(newProps.link);
 
   const [sortDirection, setSortDirection] = createSignal();
   const [action, setAction] = createSignal();
   const [selected, setSelected] = createSignal("bar");
   const [fillcolor, setFillcolor] = createSignal("steelblue");
   const newProps = mergeProps(props);
+  const client = createGraphQLClient(newProps.link);
   setAction(newProps.action);
   setSortDirection(newProps.sortDirection);
   const dataID = createUniqueId();
@@ -394,9 +395,10 @@ function App() {
         <Box>
           <PlotController
             view={TemplateView}
+            link={"http://localhost:8080/v1/graphql"}
             shape={"$.Sales.*"}
             layout={{ right: PlotBar }}
-            action={{ SALES: { _lte: 1500 } }}
+            action={ {  _and: [ { SALES: { _lte: 900 } } , { STATUS: { _eq:  "Shipped" }  } ]  }   }
             sortDirection={{ ORDERDATE: "asc" }}
             query={gql`
               query (
@@ -415,6 +417,7 @@ function App() {
         <Box>
           <PlotController
             view={SalesView}
+            link={"http://localhost:8080/v1/graphql"}
             shape={"$.Sales.*"}
             action={{ SALES: { _lte: 700 } }}
             sortDirection={{ ORDERDATE: "asc" }}
