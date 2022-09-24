@@ -109,26 +109,64 @@ const items = {
   line: PlotLine,
 };
 
-const PlotGrid = (props) => {
+const ViewController = (props) => {
+  const [fillcolor, setFillcolor] = createSignal("steelblue");
   const plotProps = mergeProps(props);
 
+  let fc;
+  const fcf = (e) => {
+    e.preventDefault();
+    // let ftx = document.getElementById(`fc${newProps.tag}`);
+    setFillcolor(fc.value);
+  };
+
+  let qt;
+  const fn = (event) => {
+    event.preventDefault();
+    //let vtx = document.getElementById(`tx${newProps.tag}`);
+    setDataLink(plotProps.tag, { where: YAML.parse(qt.value) });
+    //setAction(YAML.parse(vtx.value));
+  };
+
   return (
-    <Dynamic
-      component={plotProps.chart}
-      info={plotProps.info}
-      tag={plotProps.tag}
-      color={plotProps.color}
-    />
+    <div>
+      <form onsubmit={fn}>
+        <FormLabel>Enter Hasura Query</FormLabel>
+
+        <Textarea onSubmit={fn} ref={qt}></Textarea>
+        <Button colorScheme="secondary" type="submit">
+          query
+        </Button>
+      </form>
+
+      <form onsubmit={fcf}>
+        <InputGroup>
+          <InputLeftAddon>Color</InputLeftAddon>
+          <Input type="text" placeholder="new color" ref={fc} />
+        </InputGroup>
+
+        <Button colorScheme="primary" type="submit">
+          New Color
+        </Button>
+      </form>
+
+      <Dynamic
+        component={plotProps.chart}
+        info={plotProps.info}
+        tag={plotProps.tag}
+        color={fillcolor()}
+      />
+    </div>
   );
 };
 
 const PlotController = (props) => {
- // const client = createGraphQLClient(newProps.link);
+  // const client = createGraphQLClient(newProps.link);
 
   const [sortDirection, setSortDirection] = createSignal();
   const [action, setAction] = createSignal();
   const [selected, setSelected] = createSignal("bar");
-  const [fillcolor, setFillcolor] = createSignal("steelblue");
+  // const [fillcolor, setFillcolor] = createSignal("steelblue");
   const newProps = mergeProps(props);
   const client = createGraphQLClient(newProps.link);
   setAction(newProps.action);
@@ -158,26 +196,10 @@ const PlotController = (props) => {
     //action: action(),
   }));
 
- 
-
   //let fc;
 
   //setDataLink( l =>  [ ...l , { name: `${newProps.tag}` , cache: gdata()["Disease"] }   ]  );
   //const dataLink$ = from(observable(gdata));
-  let fc;
-  const fcf = (e) => {
-    e.preventDefault();
-    // let ftx = document.getElementById(`fc${newProps.tag}`);
-    setFillcolor(fc.value);
-  };
-
-  let qt;
-  const fn = (event) => {
-    event.preventDefault();
-    //let vtx = document.getElementById(`tx${newProps.tag}`);
-    setDataLink(dataID, { where: YAML.parse(qt.value) });
-    //setAction(YAML.parse(vtx.value));
-  };
 
   //    id={`fc${newProps.tag}`}
 
@@ -194,26 +216,6 @@ setDataLink(
   return (
     <Box>
       <div>
-        <form onsubmit={fn}>
-          <FormLabel>Enter Hasura Query</FormLabel>
-
-          <Textarea onSubmit={fn} ref={qt}></Textarea>
-          <Button colorScheme="secondary" type="submit">
-            query
-          </Button>
-        </form>
-
-        <form onsubmit={fcf}>
-          <InputGroup>
-            <InputLeftAddon>Color</InputLeftAddon>
-            <Input type="text" placeholder="new color" ref={fc} />
-          </InputGroup>
-
-          <Button colorScheme="primary" type="submit">
-            New Color
-          </Button>
-        </form>
-
         <Show when={gdata()} fallback={<div>Loading...</div>}>
           {setDataLink(dataID, {
             cache: JSONPath({ path: newProps.shape, json: gdata() }),
@@ -224,7 +226,6 @@ setDataLink(
             layout={newProps.layout}
             info={dataLink[dataID].cache}
             tag={dataID}
-            color={fillcolor()}
           />
         </Show>
       </div>
@@ -348,11 +349,10 @@ const SalesView = (props) => {
         </VStack>
       </Box>
       <Box w={"100%"}>
-        <PlotGrid
+        <ViewController
           chart={PlotLine}
           info={salesProps.info}
           tag={salesProps.tag}
-          color={salesProps.color}
         />
       </Box>
     </SimpleGrid>
@@ -375,11 +375,10 @@ const TemplateView = (props) => {
         </VStack>
       </Box>
       <Box w={"100%"}>
-        <PlotGrid
+        <ViewController
           chart={templateProps.layout.right}
           info={templateProps.info}
           tag={templateProps.tag}
-          color={templateProps.color}
         />
       </Box>
     </SimpleGrid>
@@ -398,7 +397,9 @@ function App() {
             link={"http://localhost:8080/v1/graphql"}
             shape={"$.Sales.*"}
             layout={{ right: PlotBar }}
-            action={ {  _and: [ { SALES: { _lte: 900 } } , { STATUS: { _eq:  "Shipped" }  } ]  }   }
+            action={{
+              _and: [{ SALES: { _lte: 900 } }, { STATUS: { _eq: "Shipped" } }],
+            }}
             sortDirection={{ ORDERDATE: "asc" }}
             query={gql`
               query (
