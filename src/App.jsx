@@ -62,7 +62,7 @@ const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
 const [dataLink, setDataLink] = createStore({});
 
-const PlotLine = (props) => {
+const ColorLine = (props) => {
   const lprops = mergeProps(props);
 
   return (
@@ -84,7 +84,7 @@ const PlotLine = (props) => {
   );
 };
 
-const PlotBar = (props) => {
+const ColorBar = (props) => {
   const bprops = mergeProps(props);
 
   return (
@@ -104,12 +104,9 @@ const PlotBar = (props) => {
   );
 };
 
-const items = {
-  bar: PlotBar,
-  line: PlotLine,
-};
 
-const ViewController = (props) => {
+
+const ColorView = (props) => {
   const [fillcolor, setFillcolor] = createSignal("steelblue");
   const plotProps = mergeProps(props);
 
@@ -349,8 +346,8 @@ const SalesView = (props) => {
         </VStack>
       </Box>
       <Box w={"100%"}>
-        <ViewController
-          chart={PlotLine}
+        <ColorView
+          chart={ColorLine}
           info={salesProps.info}
           tag={salesProps.tag}
         />
@@ -375,7 +372,7 @@ const TemplateView = (props) => {
         </VStack>
       </Box>
       <Box w={"100%"}>
-        <ViewController
+        <ColorView
           chart={templateProps.layout.right}
           info={templateProps.info}
           tag={templateProps.tag}
@@ -396,7 +393,7 @@ function App() {
             view={TemplateView}
             link={"http://localhost:8080/v1/graphql"}
             shape={"$.Sales.*"}
-            layout={{ right: PlotBar }}
+            layout={{ right: ColorBar }}
             action={{
               _and: [{ SALES: { _lte: 900 } }, { STATUS: { _eq: "Shipped" } }],
             }}
