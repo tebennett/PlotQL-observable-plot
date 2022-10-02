@@ -8,11 +8,13 @@
 - sql parser for creating queries
 - error-checking
 - testing
-- shape graphql response to a more useful form for plotting  (**DONE**)
+- shape graphql response to a more useful form for plotting  **(DONE)**
 - rename poorly named variables
 - in-code documentation and comments
-- prop for user supplied link to remote hasura/prisma instance  (**DONE**)
+- prop for user supplied link to remote hasura/prisma instance  **(DONE)**
 - css styling
 - export functions from a separate file
 - process nested data in graphql response 
+- testing Reusuable Interchangeable Components using an event-bus system,
+  will test later for scalability and stability.   **(IN PROGRESS)**
 

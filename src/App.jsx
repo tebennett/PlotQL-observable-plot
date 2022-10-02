@@ -9,24 +9,7 @@ import { createStore } from "solid-js/store";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
 import { createGraphQLClient, gql, request } from "@solid-primitives/graphql";
-/*
-import {
-  Card,
-  Form,
-  Button,
-  ButtonGroup,
-  Container,
-  DropdownButton,
-  Dropdown,
-  Row,
-  Col,
-  Table,
-  Nav,
-  Navbar,
-  NavDropdown,
-} from "solid-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
-*/
+import { createEventHub, createEventBus } from "@solid-primitives/event-bus";
 import {
   HopeProvider,
   Box,
@@ -61,7 +44,9 @@ let expression = Jsonata("(Sales.SALES)[[0..20]]");
 const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
 const [dataLink, setDataLink] = createStore({});
-
+const channel = createEventHub({
+  colorA: createEventBus({ value: "steelblue" }),
+});
 const ColorLine = (props) => {
   const lprops = mergeProps(props);
 
@@ -104,7 +89,52 @@ const ColorBar = (props) => {
   );
 };
 
+const ColorEventBar = (props) => {
+  const colorEventBarProps = mergeProps(props);
 
+  return (
+    <div>
+      {Plot.plot({
+        marginLeft: 120,
+        marks: [
+          Plot.ruleY([0]),
+          Plot.barY(colorEventBarProps.info, {
+            x: (d) => formatDate(d.ORDERDATE),
+            y: "SALES",
+            fill: channel.colorA.value(),
+          }),
+        ],
+      })}
+    </div>
+  );
+};
+
+const ColorEventView = (props) => {
+  const colorEventProps = mergeProps(props);
+  channel.colorA.listen((e) => {});
+
+  let fillcollor;
+  const fillcolorFn = (e) => {
+    e.preventDefault();
+
+    channel.colorA.emit(fillcollor.value);
+  };
+
+  return (
+    <div>
+      <form onsubmit={fillcolorFn}>
+        <InputGroup>
+          <InputLeftAddon>Color</InputLeftAddon>
+          <Input type="text" placeholder="new color" ref={fillcollor} />
+        </InputGroup>
+
+        <Button colorScheme="primary" type="submit">
+          New Color
+        </Button>
+      </form>
+    </div>
+  );
+};
 
 const ColorView = (props) => {
   const [fillcolor, setFillcolor] = createSignal("steelblue");
@@ -152,6 +182,20 @@ const ColorView = (props) => {
         info={plotProps.info}
         tag={plotProps.tag}
         color={fillcolor()}
+      />
+    </div>
+  );
+};
+
+const PlotGrid = (props) => {
+  const plotGridProps = mergeProps(props);
+
+  return (
+    <div>
+      <Dynamic
+        component={plotGridProps.chart}
+        info={plotGridProps.info}
+        tag={plotGridProps.tag}
       />
     </div>
   );
@@ -372,7 +416,10 @@ const TemplateView = (props) => {
         </VStack>
       </Box>
       <Box w={"100%"}>
-        <ColorView
+        <Box>
+          <ColorEventView></ColorEventView>
+        </Box>
+        <PlotGrid
           chart={templateProps.layout.right}
           info={templateProps.info}
           tag={templateProps.tag}
@@ -393,7 +440,7 @@ function App() {
             view={TemplateView}
             link={"http://localhost:8080/v1/graphql"}
             shape={"$.Sales.*"}
-            layout={{ right: ColorBar }}
+            layout={{ right: ColorEventBar }}
             action={{
               _and: [{ SALES: { _lte: 900 } }, { STATUS: { _eq: "Shipped" } }],
             }}
