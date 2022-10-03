@@ -29,8 +29,22 @@ import {
   InputGroup,
   InputLeftAddon,
   VStack,
+  Select,
+  SelectTrigger,
+  SelectPlaceholder,
+  SelectValue,
+  SelectTag,
+  SelectTagCloseButton,
+  SelectIcon,
+  SelectContent,
+  SelectListbox,
+  SelectOptGroup,
+  SelectLabel,
+  SelectOption,
+  SelectOptionText,
+  SelectOptionIndicator,
 } from "@hope-ui/solid";
-import * as Aq from "arquero";
+//import * as Aq from "arquero";
 import YAML from "yaml";
 import Jsonata from "jsonata";
 import { JSONPath } from "jsonpath-plus";
@@ -46,7 +60,9 @@ const formatDate = (date) => format(isoParse(date));
 const [dataLink, setDataLink] = createStore({});
 const channel = createEventHub({
   colorA: createEventBus({ value: "steelblue" }),
+  colorB: createEventBus({ value: "yellow" }),
 });
+
 const ColorLine = (props) => {
   const lprops = mergeProps(props);
 
@@ -62,6 +78,28 @@ const ColorLine = (props) => {
             x: (d) => formatDate(d.ORDERDATE),
             y: "SALES",
             stroke: lprops.color,
+          }),
+        ],
+      })}
+    </div>
+  );
+};
+
+const ColorEventLine = (props) => {
+  const colorEventLineProps = mergeProps(props);
+
+  return (
+    <div>
+      {Plot.plot({
+        marginLeft: 120,
+        y: {
+          grid: true,
+        },
+        marks: [
+          Plot.line(colorEventLineProps.info, {
+            x: (d) => formatDate(d.ORDERDATE),
+            y: "SALES",
+            stroke: channel[colorEventLineProps.bus.color].value(),
           }),
         ],
       })}
@@ -101,7 +139,7 @@ const ColorEventBar = (props) => {
           Plot.barY(colorEventBarProps.info, {
             x: (d) => formatDate(d.ORDERDATE),
             y: "SALES",
-            fill: channel.colorA.value(),
+            fill: channel[colorEventBarProps.bus.color].value(),
           }),
         ],
       })}
@@ -109,15 +147,50 @@ const ColorEventBar = (props) => {
   );
 };
 
+const ColorEventMenuView = (props) => {
+  const colorEventMenuViewProps = mergeProps(props);
+
+  channel.on(colorEventMenuViewProps.bus.color, (e) => {});
+
+  return (
+    <>
+      <Select
+        value={channel[colorEventMenuViewProps.bus.color].value()}
+        onChange={(e) => channel.emit(colorEventMenuViewProps.bus.color, e)}
+      >
+        <SelectTrigger>
+          <SelectPlaceholder>Choose a color</SelectPlaceholder>
+          <SelectValue />
+          <SelectIcon />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectListbox>
+            <For each={["red", "yellow", "black", "blue", "Steelblue"]}>
+              {(item) => (
+                <SelectOption value={item}>
+                  <SelectOptionText>{item}</SelectOptionText>
+                  <SelectOptionIndicator />
+                </SelectOption>
+              )}
+            </For>
+          </SelectListbox>
+        </SelectContent>
+      </Select>
+    </>
+  );
+};
+
 const ColorEventView = (props) => {
   const colorEventProps = mergeProps(props);
-  channel.colorA.listen((e) => {});
+  //channel.colorA.listen((e) => {});
+  channel.on(colorEventProps.bus.color, (e) => {});
 
-  let fillcollor;
+  let fillcolor;
   const fillcolorFn = (e) => {
     e.preventDefault();
 
-    channel.colorA.emit(fillcollor.value);
+    //channel.colorA.emit(fillcolor.value);
+    channel.emit(colorEventProps.bus.color, fillcolor.value);
   };
 
   return (
@@ -125,7 +198,7 @@ const ColorEventView = (props) => {
       <form onsubmit={fillcolorFn}>
         <InputGroup>
           <InputLeftAddon>Color</InputLeftAddon>
-          <Input type="text" placeholder="new color" ref={fillcollor} />
+          <Input type="text" placeholder="new color" ref={fillcolor} />
         </InputGroup>
 
         <Button colorScheme="primary" type="submit">
@@ -196,6 +269,7 @@ const PlotGrid = (props) => {
         component={plotGridProps.chart}
         info={plotGridProps.info}
         tag={plotGridProps.tag}
+        bus={plotGridProps.bus}
       />
     </div>
   );
@@ -390,10 +464,14 @@ const SalesView = (props) => {
         </VStack>
       </Box>
       <Box w={"100%"}>
-        <ColorView
-          chart={ColorLine}
+        <Box>
+          <ColorEventMenuView bus={{ color: "colorB" }} />
+        </Box>
+        <PlotGrid
+          chart={ColorEventLine}
           info={salesProps.info}
           tag={salesProps.tag}
+          bus={{ color: "colorB" }}
         />
       </Box>
     </SimpleGrid>
@@ -417,12 +495,13 @@ const TemplateView = (props) => {
       </Box>
       <Box w={"100%"}>
         <Box>
-          <ColorEventView></ColorEventView>
+          <ColorEventView bus={{ color: "colorA" }} />
         </Box>
         <PlotGrid
           chart={templateProps.layout.right}
           info={templateProps.info}
           tag={templateProps.tag}
+          bus={{ color: "colorA" }}
         />
       </Box>
     </SimpleGrid>
