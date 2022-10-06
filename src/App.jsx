@@ -88,7 +88,7 @@ const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
 const [dataLink, setDataLink] = createStore({});
 
-const inst = { task: "addBus"};
+//const inst = { task: "addBus"};
 
 const dispatcher = (actions) => {
   switch (actions.task) {
@@ -130,10 +130,10 @@ channels.bus.emit({ task: "addBus" , name: "colorB", data: "blue" } );
 console.log(channels);
 channels.bus.emit({ task: "addBus" , name: "colorA", data: "red" } );
 console.log(channels);
-channels.bus.emit({ task: "addBus" , name: "colorA", data: "yellow" } );
-console.log(channels);
-channels.bus.emit({ task: "addCache" , name: "salesA", data: [ {x: 1, y: 1}, {x: 2, y: 2}] } );
-console.log(channels);
+//channels.bus.emit({ task: "addBus" , name: "colorA", data: "yellow" } );
+//console.log(channels);
+//channels.bus.emit({ task: "addCache" , name: "salesA", data: [ {x: 1, y: 1}, {x: 2, y: 2}] } );
+//console.log(channels);
 
 const channel = createEventHub({
   colorA: createEventBus({ value: "steelblue" }),
@@ -216,7 +216,7 @@ const ColorEventBar = (props) => {
           Plot.barY(colorEventBarProps.info, {
             x: (d) => formatDate(d.ORDERDATE),
             y: "SALES",
-            fill: channel[colorEventBarProps.bus.color].value(),
+            fill: channels[colorEventBarProps.bus.color],    //channel[colorEventBarProps.bus.color].value()
           }),
         ],
       })}
@@ -260,14 +260,15 @@ const ColorEventMenuView = (props) => {
 const ColorEventView = (props) => {
   const colorEventProps = mergeProps(props);
   //channel.colorA.listen((e) => {});
-  channel.on(colorEventProps.bus.color, (e) => {});
+  //channel.on(colorEventProps.bus.color, (e) => {});
 
   let fillcolor;
   const fillcolorFn = (e) => {
     e.preventDefault();
 
     //channel.colorA.emit(fillcolor.value);
-    channel.emit(colorEventProps.bus.color, fillcolor.value);
+    //channel.emit(colorEventProps.bus.color, fillcolor.value);
+    channels.bus.emit({task: "addBus", name: "colorA", data: fillcolor.value})
   };
 
   return (
