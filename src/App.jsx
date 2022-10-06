@@ -88,12 +88,20 @@ const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
 const [dataLink, setDataLink] = createStore({});
 
+const inst = { task: "addBus"};
+
 const dispatcher = (actions) => {
-  switch (true) {
-    case (actions.task == "addBus"):
+  switch (actions.task) {
+    case "addBus":
       setChannels(
         produce((s) => {
           s[actions.name] = actions.data;
+        }));
+        break;
+    case "addCache":
+      setChannels(
+        produce((s) => {
+          s.cache[actions.name] = actions.data;
         }));
         break;
       
@@ -106,6 +114,7 @@ setChannels(
       value: { task: "addbus",  name: "colorA", data: "red"  },
     });
     s.dispatch = (x) => dispatcher(x);
+    s.cache = {};
   })
 );
 
@@ -118,7 +127,13 @@ console.log("log: " + channels.bus.value());
 //console.log("log: " + channels.bus.value());
 channels.bus.emit({ task: "addBus" , name: "colorB", data: "blue" } );
 //channels.dispatch;
-console.log(channels["colorB"]);
+console.log(channels);
+channels.bus.emit({ task: "addBus" , name: "colorA", data: "red" } );
+console.log(channels);
+channels.bus.emit({ task: "addBus" , name: "colorA", data: "yellow" } );
+console.log(channels);
+channels.bus.emit({ task: "addCache" , name: "salesA", data: [ {x: 1, y: 1}, {x: 2, y: 2}] } );
+console.log(channels);
 
 const channel = createEventHub({
   colorA: createEventBus({ value: "steelblue" }),
