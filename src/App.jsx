@@ -5,8 +5,8 @@ import {
   createMemo,
   createUniqueId,
 } from "solid-js";
-import { createStore } from "solid-js/store";
-import { createStorage } from "@solid-primitives/storage/dist/storage";
+import { createStore, produce } from "solid-js/store";
+
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
 import { createGraphQLClient, gql, request } from "@solid-primitives/graphql";
@@ -54,14 +54,72 @@ import * as R from "ramda";
 
 let expression = Jsonata("(Sales.SALES)[[0..20]]");
 
+/*
+  const data = {};
+
+  const eventStorageAPI = {
+    bus: createEventBus({value: "red"}),
+    clear: () => {
+      data = {};
+    },
+    key: (index) => Object.keys(data)[index],
+    get length(){
+      return Object.keys(data).length;
+    }
+  
+  
+  };
+
+  const [channels, setChannels, {remove, clear}] = createStorage({api: eventStorageAPI});
+  const ls = e => console.log(e);
+  setChannels('busA', 1);
+  console.log(channels.bus)
+  //channels.bus.listen(ls);
+  //channels.bus.emit("hi");
+  */
 
 //let reslt = expression.evaluate(jdata);
 
+//const [channels, setChannels] = createStorage({api: eventStorageAPI});
 
+const [channels, setChannels] = createStore({});
 
 const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
 const [dataLink, setDataLink] = createStore({});
+
+const dispatcher = (actions) => {
+  switch (true) {
+    case (actions.task == "addBus"):
+      setChannels(
+        produce((s) => {
+          s[actions.name] = actions.data;
+        }));
+        break;
+      
+  }
+};
+
+setChannels(
+  produce((s) => {
+    s.bus = createEventBus({
+      value: { task: "addbus",  name: "colorA", data: "red"  },
+    });
+    s.dispatch = (x) => dispatcher(x);
+  })
+);
+
+
+
+const ls = (e) => channels.dispatch(e);
+channels.bus.listen(ls);
+console.log("log: " + channels.bus.value());
+//channels.bus.emit("hi");
+//console.log("log: " + channels.bus.value());
+channels.bus.emit({ task: "addBus" , name: "colorB", data: "blue" } );
+//channels.dispatch;
+console.log(channels["colorB"]);
+
 const channel = createEventHub({
   colorA: createEventBus({ value: "steelblue" }),
   colorB: createEventBus({ value: "yellow" }),
@@ -220,7 +278,7 @@ const ColorView = (props) => {
   let fc;
   const fcf = (e) => {
     e.preventDefault();
-          // let ftx = document.getElementById(`fc${newProps.tag}`);
+    // let ftx = document.getElementById(`fc${newProps.tag}`);
     setFillcolor(fc.value);
   };
 
