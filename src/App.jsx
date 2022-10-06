@@ -6,6 +6,7 @@ import {
   createUniqueId,
 } from "solid-js";
 import { createStore } from "solid-js/store";
+import { createStorage } from "@solid-primitives/storage/dist/storage";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
 import { createGraphQLClient, gql, request } from "@solid-primitives/graphql";
@@ -44,6 +45,7 @@ import {
   SelectOptionText,
   SelectOptionIndicator,
 } from "@hope-ui/solid";
+
 //import * as Aq from "arquero";
 import YAML from "yaml";
 import Jsonata from "jsonata";
@@ -51,9 +53,11 @@ import { JSONPath } from "jsonpath-plus";
 import * as R from "ramda";
 
 let expression = Jsonata("(Sales.SALES)[[0..20]]");
+
+
 //let reslt = expression.evaluate(jdata);
 
-//console.log(reslt);
+
 
 const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
@@ -216,7 +220,7 @@ const ColorView = (props) => {
   let fc;
   const fcf = (e) => {
     e.preventDefault();
-    // let ftx = document.getElementById(`fc${newProps.tag}`);
+          // let ftx = document.getElementById(`fc${newProps.tag}`);
     setFillcolor(fc.value);
   };
 
