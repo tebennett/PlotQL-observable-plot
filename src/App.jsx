@@ -6,6 +6,7 @@ import {
   createUniqueId,
 } from "solid-js";
 import { createStore } from "solid-js/store";
+import { createStorage } from "@solid-primitives/storage";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
 import { createGraphQLClient, gql, request } from "@solid-primitives/graphql";
