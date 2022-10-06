@@ -268,7 +268,7 @@ const ColorEventView = (props) => {
 
     //channel.colorA.emit(fillcolor.value);
     //channel.emit(colorEventProps.bus.color, fillcolor.value);
-    channels.bus.emit({task: "addBus", name: "colorA", data: fillcolor.value})
+    channels.bus.emit({task: "addBus", name: colorEventProps.bus.color , data: fillcolor.value})
   };
 
   return (
