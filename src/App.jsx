@@ -10,7 +10,11 @@ import { createStore, produce } from "solid-js/store";
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
 import { createGraphQLClient, gql, request } from "@solid-primitives/graphql";
-import { createEventHub, createEventBus } from "@solid-primitives/event-bus";
+import {
+  createEventHub,
+  createEventBus,
+  createEventStack,
+} from "@solid-primitives/event-bus";
 import {
   HopeProvider,
   Box,
@@ -54,113 +58,148 @@ import * as R from "ramda";
 
 let expression = Jsonata("(Sales.SALES)[[0..20]]");
 
-/*
-  const data = {};
-
-  const eventStorageAPI = {
-    bus: createEventBus({value: "red"}),
-    clear: () => {
-      data = {};
-    },
-    key: (index) => Object.keys(data)[index],
-    get length(){
-      return Object.keys(data).length;
-    }
-  
-  
-  };
-
-  const [channels, setChannels, {remove, clear}] = createStorage({api: eventStorageAPI});
-  const ls = e => console.log(e);
-  setChannels('busA', 1);
-  console.log(channels.bus)
-  //channels.bus.listen(ls);
-  //channels.bus.emit("hi");
-  */
-
-//let reslt = expression.evaluate(jdata);
-
-//const [channels, setChannels] = createStorage({api: eventStorageAPI});
-
-const [channels, setChannels] = createStore({});
+const [mobius, set] = createStore({});
 
 const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
 const [dataLink, setDataLink] = createStore({});
 
-//const inst = { task: "addBus"};
+/*
+set(
+  produce((s) => {
+    s.channel[actions.name] = actions.data;
+  })
+);
+*/
 
 const dispatcher = (actions) => {
   switch (actions.task) {
-    case "addBus":
-      setChannels(
+    case "HSET":
+      set(
         produce((s) => {
           s[actions.name] = actions.data;
-        }));
-        break;
-    case "addCache":
-      setChannels(
+        })
+      );
+      break;
+    case "SLISTEN":
+      set(
         produce((s) => {
-          s.cache[actions.name] = actions.data;
-        }));
-        break;
-      
+          s[actions.name].listen = actions.data;
+        })
+      );
+      break;
+    case "SEMIT":
+      set(
+        produce((s) => {
+          s[actions.name].emit(actions.data);
+        })
+      );
+      break;
+    case "APPLY":
+      mobius.ops[actions.name](actions.data);
+      break;
+    case "DEFINE":
+      set(
+        produce((s) => {
+          s.ops[actions.name] = actions.data;
+        })
+      );
   }
 };
 
-setChannels(
+/*
+const dispatcher = (actions) => {   // mobius.driver[actions.driver].emit(actions.payload);
+  switch (actions.driver) {
+    case "event":
+      mobius.driver.event.emit(actions.payload);
+      break;
+    case "graphql":
+      mobius.driver.graphql.emit(actions.payload);
+      break;
+  }
+};
+*/
+
+set(
   produce((s) => {
     s.bus = createEventBus({
-      value: { task: "addbus",  name: "colorA", data: "red"  },
+      value: { task: "HSET", name: "colorA", data: "red" },
     });
     s.dispatch = (x) => dispatcher(x);
-    s.cache = {};
+    s.hub = {};
+    s.ops = {};
   })
 );
 
+const ls = (e) => mobius.dispatch(e);
+//const eventLs = (e) => eventDispatcher(e);
+mobius.bus.listen(ls);
+//mobius.driver.event.listen(eventLs);
+console.log("log: " + mobius.bus.value());
+//mobius.bus.emit("hi");
+//console.log("log: " + mobius.bus.value());
+//mobius.bus.emit({ task: "SET_CHANNEL", name: "colorB", data: "blue" });
+//mobius.dispatch;
+console.log(mobius);
+mobius.bus.emit({ task: "HSET", name: "colorA", data: "red" });
+console.log(mobius);
+mobius.bus.emit({
+  task: "HSET",
+  name: "stateA",
+  data: { address: { phone: 123 } },
+});
+console.log(mobius);
+mobius.bus.emit({
+  task: "DEFINE",
+  name: "SADDRESS",
+  data: (x) => {
+    set("stateA", "address", x.c, x.num);
+  },
+});
 
+// set( x.a,x.b,x.c,x.num);
+//data: {a: "stateA", b: "address", c: "phone", num: 456}
 
-const ls = (e) => channels.dispatch(e);
-channels.bus.listen(ls);
-console.log("log: " + channels.bus.value());
-//channels.bus.emit("hi");
-//console.log("log: " + channels.bus.value());
-channels.bus.emit({ task: "addBus" , name: "colorB", data: "blue" } );
-//channels.dispatch;
-console.log(channels);
-channels.bus.emit({ task: "addBus" , name: "colorA", data: "red" } );
-console.log(channels);
-//channels.bus.emit({ task: "addBus" , name: "colorA", data: "yellow" } );
-//console.log(channels);
-//channels.bus.emit({ task: "addCache" , name: "salesA", data: [ {x: 1, y: 1}, {x: 2, y: 2}] } );
-//console.log(channels);
+console.log(mobius);
+mobius.bus.emit({
+  task: "APPLY",
+  name: "SADDRESS",
+  data: { c: "phone", num: 456 },
+});
+console.log(mobius);
+mobius.bus.emit({ task: "HSET", name: "colorB", data: createEventBus() });
+console.log(mobius);
+mobius.bus.emit({ task: "SLISTEN", name: "colorB", data: (e) => {} });
+console.log(mobius);
+mobius.bus.emit({
+  task: "SEMIT",
+  name: "colorB",
+  data: (x) => R.toUpper(mobius.colorA),
+});
+console.log(mobius);
+console.log(mobius.colorB.value());
+mobius.bus.emit({
+  task: "HSET",
+  name: "stateB",
+  data: { mean: 135 },
+});
+console.log(mobius);
+
+mobius.bus.emit({
+  task: "HSET",
+  name: "stateB",
+  data: R.multiply(mobius.stateB.mean, mobius.stateB.mean),
+});
+console.log(mobius);
+//mobius.bus.emit({ task: "addBus" , name: "colorA", data: "yellow" } );
+//console.log(mobius);
+//mobius.bus.emit({ task: "addCache" , name: "salesA", data: [ {x: 1, y: 1}, {x: 2, y: 2}] } );
+//console.log(mobius);
 
 const channel = createEventHub({
   colorA: createEventBus({ value: "steelblue" }),
   colorB: createEventBus({ value: "yellow" }),
 });
-
-const ColorLine = (props) => {
-  const lprops = mergeProps(props);
-
-  return (
-    <div>
-      {Plot.plot({
-        marginLeft: 120,
-        y: {
-          grid: true,
-        },
-        marks: [
-          Plot.line(lprops.info, {
-            x: (d) => formatDate(d.ORDERDATE),
-            y: "SALES",
-            stroke: lprops.color,
-          }),
-        ],
-      })}
-    </div>
-  );
-};
 
 const ColorEventLine = (props) => {
   const colorEventLineProps = mergeProps(props);
@@ -184,26 +223,6 @@ const ColorEventLine = (props) => {
   );
 };
 
-const ColorBar = (props) => {
-  const bprops = mergeProps(props);
-
-  return (
-    <div>
-      {Plot.plot({
-        marginLeft: 120,
-        marks: [
-          Plot.ruleY([0]),
-          Plot.barY(bprops.info, {
-            x: (d) => formatDate(d.ORDERDATE),
-            y: "SALES",
-            fill: bprops.color,
-          }),
-        ],
-      })}
-    </div>
-  );
-};
-
 const ColorEventBar = (props) => {
   const colorEventBarProps = mergeProps(props);
 
@@ -216,7 +235,7 @@ const ColorEventBar = (props) => {
           Plot.barY(colorEventBarProps.info, {
             x: (d) => formatDate(d.ORDERDATE),
             y: "SALES",
-            fill: channels[colorEventBarProps.bus.color],    //channel[colorEventBarProps.bus.color].value()
+            fill: mobius[colorEventBarProps.bus.color], //channel[colorEventBarProps.bus.color].value()
           }),
         ],
       })}
@@ -259,20 +278,21 @@ const ColorEventMenuView = (props) => {
 
 const ColorEventView = (props) => {
   const colorEventProps = mergeProps(props);
-  //channel.colorA.listen((e) => {});
-  //channel.on(colorEventProps.bus.color, (e) => {});
 
   let fillcolor;
   const fillcolorFn = (e) => {
     e.preventDefault();
 
-    //channel.colorA.emit(fillcolor.value);
-    //channel.emit(colorEventProps.bus.color, fillcolor.value);
-    channels.bus.emit({task: "addBus", name: colorEventProps.bus.color , data: fillcolor.value})
+    mobius.bus.emit({
+      task: "HSET",
+      name: colorEventProps.bus.color,
+      data: fillcolor.value,
+    });
   };
 
   return (
     <div>
+      <div>{mobius.colorB.value()}</div>
       <form onsubmit={fillcolorFn}>
         <InputGroup>
           <InputLeftAddon>Color</InputLeftAddon>
@@ -283,57 +303,6 @@ const ColorEventView = (props) => {
           New Color
         </Button>
       </form>
-    </div>
-  );
-};
-
-const ColorView = (props) => {
-  const [fillcolor, setFillcolor] = createSignal("steelblue");
-  const plotProps = mergeProps(props);
-
-  let fc;
-  const fcf = (e) => {
-    e.preventDefault();
-    // let ftx = document.getElementById(`fc${newProps.tag}`);
-    setFillcolor(fc.value);
-  };
-
-  let qt;
-  const fn = (event) => {
-    event.preventDefault();
-    //let vtx = document.getElementById(`tx${newProps.tag}`);
-    setDataLink(plotProps.tag, { where: YAML.parse(qt.value) });
-    //setAction(YAML.parse(vtx.value));
-  };
-
-  return (
-    <div>
-      <form onsubmit={fn}>
-        <FormLabel>Enter Hasura Query</FormLabel>
-
-        <Textarea onSubmit={fn} ref={qt}></Textarea>
-        <Button colorScheme="secondary" type="submit">
-          query
-        </Button>
-      </form>
-
-      <form onsubmit={fcf}>
-        <InputGroup>
-          <InputLeftAddon>Color</InputLeftAddon>
-          <Input type="text" placeholder="new color" ref={fc} />
-        </InputGroup>
-
-        <Button colorScheme="primary" type="submit">
-          New Color
-        </Button>
-      </form>
-
-      <Dynamic
-        component={plotProps.chart}
-        info={plotProps.info}
-        tag={plotProps.tag}
-        color={fillcolor()}
-      />
     </div>
   );
 };
@@ -354,19 +323,15 @@ const PlotGrid = (props) => {
 };
 
 const PlotController = (props) => {
-  // const client = createGraphQLClient(newProps.link);
-
   const [sortDirection, setSortDirection] = createSignal();
   const [action, setAction] = createSignal();
-  const [selected, setSelected] = createSignal("bar");
-  // const [fillcolor, setFillcolor] = createSignal("steelblue");
+
   const newProps = mergeProps(props);
   const client = createGraphQLClient(newProps.link);
   setAction(newProps.action);
   setSortDirection(newProps.sortDirection);
   const dataID = createUniqueId();
 
-  //  `${newProps.tag}`
   setDataLink(
     R.fromPairs([
       [
@@ -386,25 +351,7 @@ const PlotController = (props) => {
   const [gdata] = client(dataLink[dataID].query, () => ({
     sortDirection: sortDirection(),
     action: dataLink[dataID].where,
-    //action: action(),
   }));
-
-  //let fc;
-
-  //setDataLink( l =>  [ ...l , { name: `${newProps.tag}` , cache: gdata()["Disease"] }   ]  );
-  //const dataLink$ = from(observable(gdata));
-
-  //    id={`fc${newProps.tag}`}
-
-  /*
-  setDataLink( R.fromPairs([[`${newProps.tag}`, {cache: gdata()["Disease"]  }   ]])  );
-  setDataLink( R.fromPairs([[`${newProps.tag}`, { query: newProps.query }   ]])  );
-  console.log(dataLink[newProps.tag]);
-setDataLink(
-              R.fromPairs([[`${newProps.tag}`, gdata()["Disease"]]])
-
-*/
-  //console.log(dataLink[newProps.tag]);
 
   return (
     <Box>
@@ -424,24 +371,7 @@ setDataLink(
       </div>
     </Box>
   );
-  //  {setDataLink(dataID, { cache: gdata()["Disease"] })}
-  //<div id={newProps.tag}></div>
 };
-
-/*
-
-{setDataLink(dataID, {cache: JSONPath({path: newProps.shape, json: gdata() } ) } )}
-
-<Form.Select
-                value={selected()}
-                onInput={(e) => setSelected(e.currentTarget.value)}
-              >
-                <For each={Object.keys(items)}>
-                  {(fnc) => <option value={fnc}>{fnc}</option>}
-                </For>
-              </Form.Select>
-
-*/
 
 const DesignGrid = (props) => {
   const designProps = mergeProps(props);
@@ -449,9 +379,8 @@ const DesignGrid = (props) => {
   let dgt;
   const dgn = (event) => {
     event.preventDefault();
-    //let dgx = document.getElementById(`dgx${designProps.tag}`);
+
     setDataLink(`${designProps.tag}`, { where: YAML.parse(dgt.value) });
-    //setAction(YAML.parse(vtx.value));
   };
 
   return (
@@ -472,20 +401,7 @@ const DesignGrid = (props) => {
 };
 
 const DataGrid = (props) => {
-  //const [headers,setHeaders] = createSignal();
-  //let rslt = from(dataLink$);
-  //console.log(rslt);
   const dprops = mergeProps(props);
-  // setDataNode(dataLink[dprops.tag].cache);
-  //const pred = R.whereAny({name: R.equals(`${dprops.tag}`), cache: R.equals(R.__)});
-  //if (R.find(pred,dataLink) != undefined)
-  //const dl = R.filter(pred, dataLink)[0].cache;
-  //console.log( R.filter(pred, dataLink)[0].cache );
-  //const tbl = Aq.from(dprops.info);
-  // if (dataLink != undefined)
-  //console.log(dataLink[dprops.tag]);
-  //console.log(dataLink);
-  // dataLink[dprops.tag] == undefined ? {} : dataLink[dprops.tag].cache
 
   const headers = createMemo(() =>
     Object.keys(
