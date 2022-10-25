@@ -16,5 +16,6 @@
 - export functions from a separate file
 - process nested data in graphql response 
 - testing Reusuable Interchangeable Components using an event-bus system,
-  will test later for scalability and stability.   **(IN PROGRESS)**
-
+  will test later for scalability and stability.   **(CANCELLED)**
+  Solid js signals are already event-emitters, so the code was redundant
+- add state machines

@@ -1,7 +1,7 @@
 # Mobius
 
 # Description:  test branch for event-bus implementations
-
+# CANCELLED:  Solid js signals are already event-emitters, so the code was redundant
 reduce the number of event-buses needed, improve scalability and stability before integrating into master
 
 # Ideas
@@ -12,7 +12,7 @@ reduce the number of event-buses needed, improve scalability and stability befor
 4.  Event-bus -> Reducer -> Storage
 
 
-
+# State Machines
 
 **Portfolio project:**
 A devkit for Data Analysts to create data agnostic graphql plotting apps 

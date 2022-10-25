@@ -4,17 +4,15 @@ import {
   mergeProps,
   createMemo,
   createUniqueId,
+  createEffect,
+  createComputed,
 } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 
 import * as Plot from "@observablehq/plot";
 import { timeFormat, isoParse } from "d3-time-format";
 import { createGraphQLClient, gql, request } from "@solid-primitives/graphql";
-import {
-  createEventHub,
-  createEventBus,
-  createEventStack,
-} from "@solid-primitives/event-bus";
+
 import {
   HopeProvider,
   Box,
@@ -58,148 +56,17 @@ import * as R from "ramda";
 
 let expression = Jsonata("(Sales.SALES)[[0..20]]");
 
-const [mobius, set] = createStore({});
+const [flex, set] = createStore({});
 
 const format = timeFormat("%y-%m-%d");
 const formatDate = (date) => format(isoParse(date));
-const [dataLink, setDataLink] = createStore({});
-
-/*
-set(
-  produce((s) => {
-    s.channel[actions.name] = actions.data;
-  })
-);
-*/
-
-const dispatcher = (actions) => {
-  switch (actions.task) {
-    case "HSET":
-      set(
-        produce((s) => {
-          s[actions.name] = actions.data;
-        })
-      );
-      break;
-    case "SLISTEN":
-      set(
-        produce((s) => {
-          s[actions.name].listen = actions.data;
-        })
-      );
-      break;
-    case "SEMIT":
-      set(
-        produce((s) => {
-          s[actions.name].emit(actions.data);
-        })
-      );
-      break;
-    case "APPLY":
-      mobius.ops[actions.name](actions.data);
-      break;
-    case "DEFINE":
-      set(
-        produce((s) => {
-          s.ops[actions.name] = actions.data;
-        })
-      );
-  }
-};
-
-/*
-const dispatcher = (actions) => {   // mobius.driver[actions.driver].emit(actions.payload);
-  switch (actions.driver) {
-    case "event":
-      mobius.driver.event.emit(actions.payload);
-      break;
-    case "graphql":
-      mobius.driver.graphql.emit(actions.payload);
-      break;
-  }
-};
-*/
 
 set(
   produce((s) => {
-    s.bus = createEventBus({
-      value: { task: "HSET", name: "colorA", data: "red" },
-    });
-    s.dispatch = (x) => dispatcher(x);
-    s.hub = {};
-    s.ops = {};
+    s.colorA = "red";
+    s.colorB = "steelblue";
   })
 );
-
-const ls = (e) => mobius.dispatch(e);
-//const eventLs = (e) => eventDispatcher(e);
-mobius.bus.listen(ls);
-//mobius.driver.event.listen(eventLs);
-console.log("log: " + mobius.bus.value());
-//mobius.bus.emit("hi");
-//console.log("log: " + mobius.bus.value());
-//mobius.bus.emit({ task: "SET_CHANNEL", name: "colorB", data: "blue" });
-//mobius.dispatch;
-console.log(mobius);
-mobius.bus.emit({ task: "HSET", name: "colorA", data: "red" });
-console.log(mobius);
-mobius.bus.emit({
-  task: "HSET",
-  name: "stateA",
-  data: { address: { phone: 123 } },
-});
-console.log(mobius);
-mobius.bus.emit({
-  task: "DEFINE",
-  name: "SADDRESS",
-  data: (x) => {
-    set("stateA", "address", x.c, x.num);
-  },
-});
-
-// set( x.a,x.b,x.c,x.num);
-//data: {a: "stateA", b: "address", c: "phone", num: 456}
-
-console.log(mobius);
-mobius.bus.emit({
-  task: "APPLY",
-  name: "SADDRESS",
-  data: { c: "phone", num: 456 },
-});
-console.log(mobius);
-mobius.bus.emit({ task: "HSET", name: "colorB", data: createEventBus() });
-console.log(mobius);
-mobius.bus.emit({ task: "SLISTEN", name: "colorB", data: (e) => {} });
-console.log(mobius);
-mobius.bus.emit({
-  task: "SEMIT",
-  name: "colorB",
-  data: (x) => R.toUpper(mobius.colorA),
-});
-console.log(mobius);
-console.log(mobius.colorB.value());
-mobius.bus.emit({
-  task: "HSET",
-  name: "stateB",
-  data: { mean: 135 },
-});
-console.log(mobius);
-
-mobius.bus.emit({
-  task: "HSET",
-  name: "stateB",
-  data: R.multiply(mobius.stateB.mean, mobius.stateB.mean),
-});
-console.log(mobius);
-//mobius.bus.emit({ task: "addBus" , name: "colorA", data: "yellow" } );
-//console.log(mobius);
-//mobius.bus.emit({ task: "addCache" , name: "salesA", data: [ {x: 1, y: 1}, {x: 2, y: 2}] } );
-//console.log(mobius);
-
-const channel = createEventHub({
-  colorA: createEventBus({ value: "steelblue" }),
-  colorB: createEventBus({ value: "yellow" }),
-});
 
 const ColorEventLine = (props) => {
   const colorEventLineProps = mergeProps(props);
@@ -215,7 +82,7 @@ const ColorEventLine = (props) => {
           Plot.line(colorEventLineProps.info, {
             x: (d) => formatDate(d.ORDERDATE),
             y: "SALES",
-            stroke: channel[colorEventLineProps.bus.color].value(),
+            stroke: flex[colorEventLineProps.bus.color],
           }),
         ],
       })}
@@ -235,7 +102,7 @@ const ColorEventBar = (props) => {
           Plot.barY(colorEventBarProps.info, {
             x: (d) => formatDate(d.ORDERDATE),
             y: "SALES",
-            fill: mobius[colorEventBarProps.bus.color], //channel[colorEventBarProps.bus.color].value()
+            fill: flex[colorEventBarProps.bus.color],
           }),
         ],
       })}
@@ -246,13 +113,17 @@ const ColorEventBar = (props) => {
 const ColorEventMenuView = (props) => {
   const colorEventMenuViewProps = mergeProps(props);
 
-  channel.on(colorEventMenuViewProps.bus.color, (e) => {});
-
   return (
     <>
       <Select
-        value={channel[colorEventMenuViewProps.bus.color].value()}
-        onChange={(e) => channel.emit(colorEventMenuViewProps.bus.color, e)}
+        value={flex[colorEventMenuViewProps.bus.color]}
+        onChange={(e) =>
+          set(
+            produce((s) => {
+              s[colorEventMenuViewProps.bus.color] = e;
+            })
+          )
+        }
       >
         <SelectTrigger>
           <SelectPlaceholder>Choose a color</SelectPlaceholder>
@@ -283,16 +154,28 @@ const ColorEventView = (props) => {
   const fillcolorFn = (e) => {
     e.preventDefault();
 
-    mobius.bus.emit({
-      task: "HSET",
-      name: colorEventProps.bus.color,
-      data: fillcolor.value,
-    });
+    set(
+      produce((s) => {
+        s[colorEventProps.bus.color] = fillcolor.value;
+      })
+    );
   };
+  
+  /*
+  createComputed(() => {
+    set(
+      produce((s) => {
+        s.colorB = R.toUpper(flex.colorA);
+        s.colorC = R.toLower(flex.colorB);
+      })
+    );
+  });
+  
+*/
 
   return (
     <div>
-      <div>{mobius.colorB.value()}</div>
+      <div>{flex.colorB}</div>
       <form onsubmit={fillcolorFn}>
         <InputGroup>
           <InputLeftAddon>Color</InputLeftAddon>
@@ -332,7 +215,7 @@ const PlotController = (props) => {
   setSortDirection(newProps.sortDirection);
   const dataID = createUniqueId();
 
-  setDataLink(
+  set(
     R.fromPairs([
       [
         dataID,
@@ -348,23 +231,23 @@ const PlotController = (props) => {
     ])
   );
 
-  const [gdata] = client(dataLink[dataID].query, () => ({
+  const [gdata] = client(flex[dataID].query, () => ({
     sortDirection: sortDirection(),
-    action: dataLink[dataID].where,
+    action: flex[dataID].where,
   }));
 
   return (
     <Box>
       <div>
         <Show when={gdata()} fallback={<div>Loading...</div>}>
-          {setDataLink(dataID, {
+          {set(dataID, {
             cache: JSONPath({ path: newProps.shape, json: gdata() }),
           })}
 
           <Dynamic
             component={newProps.view}
             layout={newProps.layout}
-            info={dataLink[dataID].cache}
+            info={flex[dataID].cache}
             tag={dataID}
           />
         </Show>
@@ -380,7 +263,7 @@ const DesignGrid = (props) => {
   const dgn = (event) => {
     event.preventDefault();
 
-    setDataLink(`${designProps.tag}`, { where: YAML.parse(dgt.value) });
+    set(`${designProps.tag}`, { where: YAML.parse(dgt.value) });
   };
 
   return (
@@ -405,15 +288,15 @@ const DataGrid = (props) => {
 
   const headers = createMemo(() =>
     Object.keys(
-      dataLink[dprops.tag] && dataLink[dprops.tag].cache.length > 0
-        ? dataLink[dprops.tag].cache[0]
+      flex[dprops.tag] && flex[dprops.tag].cache.length > 0
+        ? flex[dprops.tag].cache[0]
         : {}
     )
   );
 
   return (
     <Show
-      when={dataLink[dprops.tag] && dataLink[dprops.tag].cache.length > 0}
+      when={flex[dprops.tag] && flex[dprops.tag].cache.length > 0}
       fallback={<div>loading...</div>}
     >
       <div style={"max-height: 300px;overflow-y: scroll;"}>
@@ -426,7 +309,7 @@ const DataGrid = (props) => {
             </Tr>
           </Thead>
           <Tbody>
-            <For each={dataLink[dprops.tag].cache}>
+            <For each={flex[dprops.tag].cache}>
               {(d) => (
                 <Tr>
                   {headers()?.map((header) => (
