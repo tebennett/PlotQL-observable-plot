@@ -80,8 +80,8 @@ const ColorEventLine = (props) => {
         },
         marks: [
           Plot.line(colorEventLineProps.info, {
-            x: (d) => formatDate(d.ORDERDATE),
-            y: "SALES",
+            x: (d) => formatDate(d.Order_Date),
+            y: "Profit",
             stroke: flex[colorEventLineProps.bus.color],
           }),
         ],
@@ -92,7 +92,7 @@ const ColorEventLine = (props) => {
 
 const ColorEventBar = (props) => {
   const colorEventBarProps = mergeProps(props);
-
+console.log(colorEventBarProps.info);
   return (
     <div>
       {Plot.plot({
@@ -100,8 +100,8 @@ const ColorEventBar = (props) => {
         marks: [
           Plot.ruleY([0]),
           Plot.barY(colorEventBarProps.info, {
-            x: (d) => formatDate(d.ORDERDATE),
-            y: "SALES",
+            x: (d) => formatDate(d.Order_Date),
+            y: "Profit",
             fill: flex[colorEventBarProps.bus.color],
           }),
         ],
@@ -175,7 +175,6 @@ const ColorEventView = (props) => {
 
   return (
     <div>
-      <div>{flex.colorB}</div>
       <form onsubmit={fillcolorFn}>
         <InputGroup>
           <InputLeftAddon>Color</InputLeftAddon>
@@ -395,20 +394,20 @@ function App() {
           <PlotController
             view={TemplateView}
             link={"http://localhost:8080/v1/graphql"}
-            shape={"$.Sales.*"}
+            shape={"$.superstore.*"}
             layout={{ right: ColorEventBar }}
             action={{
-              _and: [{ SALES: { _lte: 900 } }, { STATUS: { _eq: "Shipped" } }],
+              Profit: {_gte: 0},
             }}
-            sortDirection={{ ORDERDATE: "asc" }}
+            sortDirection={{ Order_Date: "asc" }}
             query={gql`
               query (
-                $sortDirection: [Sales_order_by!]
-                $action: Sales_bool_exp
+                $sortDirection: [superstore_order_by!]
+                $action: superstore_bool_exp
               ) {
-                Sales(order_by: $sortDirection, where: $action) {
-                  ORDERDATE
-                  SALES
+                superstore(order_by: $sortDirection, where: $action) {
+                  Order_Date
+                  Profit
                 }
               }
             `}
@@ -419,17 +418,17 @@ function App() {
           <PlotController
             view={SalesView}
             link={"http://localhost:8080/v1/graphql"}
-            shape={"$.Sales.*"}
-            action={{ SALES: { _lte: 700 } }}
-            sortDirection={{ ORDERDATE: "asc" }}
+            shape={"$.superstore.*"}
+            action={{ Profit: { _gte: 0 } }}
+            sortDirection={{ Order_Date: "asc" }}
             query={gql`
               query (
-                $sortDirection: [Sales_order_by!]
-                $action: Sales_bool_exp
+                $sortDirection: [superstore_order_by!]
+                $action: superstore_bool_exp
               ) {
-                Sales(order_by: $sortDirection, where: $action) {
-                  ORDERDATE
-                  SALES
+                superstore(order_by: $sortDirection, where: $action) {
+                  Order_Date
+                  Profit
                 }
               }
             `}
