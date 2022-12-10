@@ -1,6 +1,6 @@
 # Description
 
-
+# ON INDEFINITE HOLD DUE TO PRESSING FINANCIAL ISSUES
 **Portfolio project:**
 A devkit for Data Analysts to create data agnostic graphql plotting apps 
 
