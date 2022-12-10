@@ -92,7 +92,7 @@ const ColorEventLine = (props) => {
 
 const ColorEventBar = (props) => {
   const colorEventBarProps = mergeProps(props);
-console.log(colorEventBarProps.info);
+//console.log(colorEventBarProps.info);
   return (
     <div>
       {Plot.plot({
@@ -270,7 +270,7 @@ const DesignGrid = (props) => {
       <Heading>Design Grid {designProps.tag}</Heading>
       <div>
         <form onsubmit={dgn}>
-          <FormLabel>Enter Hasura Query</FormLabel>
+          <FormLabel>Enter Query</FormLabel>
 
           <Textarea ref={dgt}></Textarea>
           <Button colorScheme="secondary" type="submit">
@@ -397,7 +397,7 @@ function App() {
             shape={"$.superstore.*"}
             layout={{ right: ColorEventBar }}
             action={{
-              Profit: {_gte: 0},
+              Profit: {_lte: 9000},
             }}
             sortDirection={{ Order_Date: "asc" }}
             query={gql`
@@ -419,7 +419,7 @@ function App() {
             view={SalesView}
             link={"http://localhost:8080/v1/graphql"}
             shape={"$.superstore.*"}
-            action={{ Profit: { _gte: 0 } }}
+            action={{ Profit: { _gte: 2000 } }}
             sortDirection={{ Order_Date: "asc" }}
             query={gql`
               query (
