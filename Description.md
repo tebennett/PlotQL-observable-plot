@@ -1,6 +1,6 @@
-# Mobius
+# Aquaduct
 
-# Description:  test branch for event-bus implementations
+# Description:  test branch for transition to prisma graphql and Zag UI
 # CANCELLED:  Solid js signals are already event-emitters, so the code was redundant
 reduce the number of event-buses needed, improve scalability and stability before integrating into master
 
@@ -13,6 +13,7 @@ reduce the number of event-buses needed, improve scalability and stability befor
 
 
 # State Machines
+Zag UI
 
 **Portfolio project:**
 A devkit for Data Analysts to create data agnostic graphql plotting apps 
